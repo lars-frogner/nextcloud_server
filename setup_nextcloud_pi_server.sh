@@ -4,10 +4,10 @@ set -e
 # Install Raspbian Lite on SD card using Raspberry Pi Imager
 # Add empty file named `ssh` in boot directory to enable ssh
 # ping raspberrypi # Get IP for ssh login
-# ssh pi@<ip> # ssh to Pi, password is raspberry
+# ssh root@<ip> # ssh to Pi, password is raspberry
 
-read -p "[host: $(hostname), user: $(whoami)] Continue? " -n 1 -r
-echo    # (optional) move to a new line
+read -p "[host: $(hostname)] Continue? " -n 1 -r
+echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
     [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
@@ -21,11 +21,11 @@ printf "\n"
 
 set -v
 
-./set_password.sh $PASSWORD
+./setup_users.sh $PASSWORD # Exports $ADMIN_HOME
 
 ./install_lamp.sh
 
-NEXTCLOUD_ROOT=$(./install_nextcloud.sh)
+source ./install_nextcloud.sh # Exports $NEXTCLOUD_ROOT
 
 ./setup_mysql.sh $PASSWORD
 
@@ -33,13 +33,13 @@ NEXTCLOUD_ROOT=$(./install_nextcloud.sh)
 
 ./configure_php.sh
 
-DOMAIN_NAME=$(./install_noip_duc.sh)
+source ./install_noip_duc.sh # Exports $DOMAIN_NAME
 
 ./install_certbot.sh
 
-PRIMARY_STORAGE=$(./setup_storage.sh)
+source ./setup_storage.sh # Exports $PRIMARY_STORAGE
 
-./setup_nextcloud.sh $PASSWORD $NEXTCLOUD_ROOT $PRIMARY_STORAGE $DOMAIN_NAME
+./setup_nextcloud.sh $PASSWORD
 
 set +v
 

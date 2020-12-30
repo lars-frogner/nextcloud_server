@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-NEXTCLOUD_ROOT=/var/www
+export NEXTCLOUD_ROOT=/var/www
 
 set -x
 
@@ -10,7 +10,3 @@ sudo wget https://download.nextcloud.com/server/releases/latest.tar.bz2 -P $NEXT
 sudo tar -xvf $NEXTCLOUD_ROOT/latest.tar.bz2 -C $NEXTCLOUD_ROOT/
 sudo rm $NEXTCLOUD_ROOT/latest.tar.bz2
 sudo chown -R www-data:www-data $NEXTCLOUD_ROOT/nextcloud/ # Set owner
-
-set +x
-
-echo $NEXTCLOUD_ROOT

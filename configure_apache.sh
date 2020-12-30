@@ -3,9 +3,9 @@ set -e
 set -x
 
 # Create nextcloud config file for Apache
-echo "Alias /nextcloud \"/var/www/nextcloud/\"
+echo "Alias /nextcloud \"$NEXTCLOUD_ROOT/nextcloud/\"
 
-<Directory /var/www/nextcloud/>
+<Directory $NEXTCLOUD_ROOT/nextcloud/>
   Require all granted
   AllowOverride All
   Options FollowSymLinks MultiViews
