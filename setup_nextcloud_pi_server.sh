@@ -4,7 +4,7 @@ set -e
 # Install Raspbian Lite on SD card using Raspberry Pi Imager
 # Add empty file named `ssh` in boot directory to enable ssh
 # ping raspberrypi # Get IP for ssh login
-# ssh root@<ip> # ssh to Pi, password is raspberry
+# ssh pi@<ip> # ssh to Pi, password is raspberry
 
 read -p "[host: $(hostname)] Continue? " -n 1 -r
 echo
@@ -21,7 +21,7 @@ printf "\n"
 
 set -v
 
-./setup_users.sh $PASSWORD # Exports $ADMIN_HOME
+source ./setup_users.sh $PASSWORD # Exports $ADMIN_HOME
 
 ./install_lamp.sh
 
