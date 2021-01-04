@@ -18,9 +18,9 @@ echo admin:$PASSWORD | sudo chpasswd
 export ADMIN_HOME=/home/admin
 
 # Enable convenient ls aliases
-sudo -u admin sed -i "s/#alias ll='ls -l'/alias ll='ls -l'/g" $ADMIN_HOME/.bashrc
+sudo -u admin sed -i "s/#alias ll='ls -l'/alias ll='ls -lh'/g" $ADMIN_HOME/.bashrc
 sudo -u admin sed -i "s/#alias la='ls -A'/alias la='ls -A'/g" $ADMIN_HOME/.bashrc
-sudo -u admin sed -i "s/#alias l='ls -CF'/alias l='ls -CF'/g" $ADMIN_HOME/.bashrc
+sudo -u admin sed -i "s/#alias l='ls -CF'/alias l='ls -Alh'/g" $ADMIN_HOME/.bashrc
 
 # Enable arrow up/down history search
 sudo -u admin cp /etc/inputrc $ADMIN_HOME/.inputrc
