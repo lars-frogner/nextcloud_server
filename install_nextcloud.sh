@@ -1,9 +1,8 @@
 #!/bin/bash
 set -e
+set -x
 
 export NEXTCLOUD_ROOT=/var/www
-
-set -x
 
 # Download and unpack latest nextcloud version in /var/www/
 sudo wget https://download.nextcloud.com/server/releases/latest.tar.bz2 -P $NEXTCLOUD_ROOT/

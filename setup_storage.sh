@@ -1,10 +1,9 @@
 #!/bin/bash
 set -e
+set -x
 
 HDD1_MOUNT_POINT=/mnt/hdd1
 export PRIMARY_STORAGE=$HDD1_MOUNT_POINT
-
-set -x
 
 # Install packages for NTFS compatibility
 sudo apt -y install fuse

@@ -1,9 +1,8 @@
 #!/bin/bash
 set -e
+set -x
 
 NOIP_ROOT=$ADMIN_HOME
-
-set -x
 
 # Download and install No-IP Dynamic Update Client
 sudo -u admin wget https://www.noip.com/client/linux/noip-duc-linux.tar.gz -P $NOIP_ROOT/
