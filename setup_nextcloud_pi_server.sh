@@ -3,8 +3,11 @@ set -e
 
 # Install Raspbian Lite on SD card using Raspberry Pi Imager
 # Add empty file named `ssh` in boot directory to enable ssh
-# ping raspberrypi # Get IP for ssh login
-# ssh pi@<ip> # ssh to Pi, password is raspberry
+# host raspberrypi | sed -n "s/^.*has address \([0-9\.]*\).*$/\1/p" # Obtain Pi IP address
+# Go to router settings and forward ports 22 (SSH), [80 (HTTP), ] 443 (HTTPS) to Pi IP address
+# ssh pi@raspberrypi # ssh to Pi over ethernet, password is raspberry
+# (optional for wifi) sudo raspi-config # -> 1 -> S1 to connect to wifi, then reboot
+# (optional for wifi) ssh pi@raspberrypi.local # ssh to Pi over wifi, password is raspberry
 
 read -p "[host: $(hostname)] Continue? " -n 1 -r
 echo
