@@ -3,12 +3,12 @@ set -e
 
 PASSWORD=${1?"Usage: $0 <password>"}
 
-HOST_IP=$(hostname -I | sed 's/ //g')
+set -v
+
+HOST_IP=$(host raspberrypi | sed -n "s/^.*has address \([0-9\.]*\).*$/\1/p")
 PUBLIC_IP=$(curl ifconfig.me)
 
 NEXTCLOUD_DIR=$NEXTCLOUD_ROOT/nextcloud
-
-set -v
 
 # Install nextcloud for admin user
 sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:install --admin-user admin --admin-pass $PASSWORD --data-dir=$PRIMARY_STORAGE --database mysql --database-name nextcloud --database-user admin --database-pass $PASSWORD
@@ -36,4 +36,4 @@ sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:update:htaccess
 
 # Add convenient occ alias to bashrc
 echo "
-alias occ='sudo -u www-data php $NEXTCLOUD_DIR/occ'" >> $ADMIN_HOME/.bashrc
+alias occ='sudo -u www-data php $NEXTCLOUD_DIR/occ'" | sudo -u admin tee -a $ADMIN_HOME/.bashrc
