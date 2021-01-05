@@ -5,7 +5,7 @@ PASSWORD=${1?"Usage: $0 <password>"}
 
 set -v
 
-HOST_IP=$(host raspberrypi | sed -n "s/^.*has address \([0-9\.]*\).*$/\1/p")
+HOST_IP=$(hostname -I | tr -d ' ')
 PUBLIC_IP=$(curl ifconfig.me)
 
 NEXTCLOUD_DIR=$NEXTCLOUD_ROOT/nextcloud
@@ -22,7 +22,7 @@ if [ ! -z "$DOMAIN_NAME" ]
 fi
 
 # Enable External storages app
-#sudo -u www-data php $NEXTCLOUD_DIR/occ app:enable files_external
+sudo -u www-data php $NEXTCLOUD_DIR/occ app:enable files_external
 
 # Install two-factor authentication app
 sudo -u www-data php $NEXTCLOUD_DIR/occ app:install twofactor_totp

@@ -3,8 +3,6 @@ set -e
 
 # Install Raspbian Lite on SD card using Raspberry Pi Imager
 # Add empty file named `ssh` in boot directory to enable ssh
-# host raspberrypi | sed -n "s/^.*has address \([0-9\.]*\).*$/\1/p" # Obtain Pi IP address
-# Go to router settings and forward ports 22 (SSH), [80 (HTTP), ] 443 (HTTPS) to Pi IP address
 # rsync -avP nextcloud_server pi@raspberrypi:~/ # Copy setup code to Pi
 # ssh pi@raspberrypi # ssh to Pi over ethernet, password is raspberry
 # (optional for wifi) sudo raspi-config # -> 1 -> S1 to connect to wifi, then reboot
@@ -26,27 +24,31 @@ printf "\n"
 
 set -v
 
-source ./setup_users.sh $PASSWORD # Exports $ADMIN_HOME
+SCRIPT_DIR=$(dirname $(readlink -f "$0"))
 
-./setup_network.sh
+source $SCRIPT_DIR/setup_users.sh $PASSWORD # Exports $ADMIN_HOME
 
-./install_lamp.sh
+$SCRIPT_DIR/setup_network.sh
 
-source ./install_nextcloud.sh # Exports $NEXTCLOUD_ROOT
+$SCRIPT_DIR/install_lamp.sh
 
-./setup_mysql.sh $PASSWORD
+source $SCRIPT_DIR/install_nextcloud.sh # Exports $NEXTCLOUD_ROOT
 
-./configure_apache.sh
+$SCRIPT_DIR/setup_mysql.sh $PASSWORD
 
-./configure_php.sh
+$SCRIPT_DIR/configure_apache.sh
 
-source ./install_noip_duc.sh # Exports $DOMAIN_NAME
+$SCRIPT_DIR/configure_php.sh
 
-./install_certbot.sh
+source $SCRIPT_DIR/install_noip_duc.sh # Exports $DOMAIN_NAME
 
-source ./setup_storage.sh # Exports $PRIMARY_STORAGE
+echo "Go to router settings and forward ports 22 (SSH), [80 (HTTP), ] 443 (HTTPS) to IP $(hostname -I | tr -d ' ')"
+read -p "Press ENTER to continue"
+$SCRIPT_DIR/install_certbot.sh
 
-./setup_nextcloud.sh $PASSWORD
+source $SCRIPT_DIR/setup_storage.sh # Exports $PRIMARY_STORAGE
+
+$SCRIPT_DIR/setup_nextcloud.sh $PASSWORD
 
 set +v
 

@@ -3,7 +3,7 @@ set -e
 set -x
 
 CONNECTION=$(ip route get 8.8.8.8 | grep -Po 'dev \K\w+' | grep -qFf - /proc/net/wireless && echo wlan0 || echo eth0)
-HOST_IP=$(host raspberrypi | sed -n "s/^.*has address \([0-9\.]*\).*$/\1/p")
+HOST_IP=$(hostname -I | tr -d ' ')
 ROUTER_IP=$(ip r | grep default | sed -n "s/^default via \([0-9\.]*\).*$/\1/p")
 DNS_IP=$(sudo sed -n "s/^nameserver \([0-9\.]*\).*$/\1/p" /etc/resolv.conf | head -n 1)
 
