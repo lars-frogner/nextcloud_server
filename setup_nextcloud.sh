@@ -5,7 +5,6 @@ PASSWORD=${1?"Usage: $0 <password>"}
 
 set -v
 
-HOST_IP=$(hostname -I | tr -d ' ')
 PUBLIC_IP=$(curl ifconfig.me)
 
 NEXTCLOUD_DIR=$NEXTCLOUD_ROOT/nextcloud

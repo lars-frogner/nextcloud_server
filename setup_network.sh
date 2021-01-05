@@ -3,7 +3,7 @@ set -e
 set -x
 
 CONNECTION=$(ip route get 8.8.8.8 | grep -Po 'dev \K\w+' | grep -qFf - /proc/net/wireless && echo wlan0 || echo eth0)
-HOST_IP=$(hostname -I | tr -d ' ')
+export HOST_IP=$(ip -o -4 addr list $CONNECTION | awk '{print $4}' | cut -d/ -f1)
 ROUTER_IP=$(ip r | grep default | sed -n "s/^default via \([0-9\.]*\).*$/\1/p")
 DNS_IP=$(sudo sed -n "s/^nameserver \([0-9\.]*\).*$/\1/p" /etc/resolv.conf | head -n 1)
 
