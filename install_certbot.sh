@@ -7,3 +7,5 @@ sudo apt -y install python-certbot-apache
 
 # Grab SSL certificate from Let's Encrypt and configure Apache
 sudo certbot --apache
+
+set +x

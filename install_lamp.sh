@@ -15,3 +15,5 @@ sudo apt -y install libapache2-mod-php7.3 php7.3-gd php7.3-mysql php7.3-curl php
 
 # Restart Apache
 sudo service apache2 restart
+
+set +x

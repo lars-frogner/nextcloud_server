@@ -21,3 +21,5 @@ interface $CONNECTION
 static ip_address=$HOST_IP/24
 static routers=$ROUTER_IP
 static domain_name_servers=$DNS_IP" | sudo tee -a /etc/dhcpcd.conf
+
+set +x

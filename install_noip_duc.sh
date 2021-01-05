@@ -19,3 +19,5 @@ export DOMAIN_NAME=$(sudo /usr/local/bin/noip2 -S 2>&1 >/dev/null | sed -n "s/^.
 
 # Make sure DUC service is started automatically on boot
 sudo sed -i '/^exit 0.*/i /usr/local/bin/noip2' /etc/rc.local
+
+set +x

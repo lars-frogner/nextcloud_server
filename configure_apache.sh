@@ -25,3 +25,5 @@ sudo a2enmod headers
 
 # Reload configuration
 sudo systemctl reload apache2
+
+set +x
