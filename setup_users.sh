@@ -22,6 +22,10 @@ sudo -u admin sed -i "s/#alias ll='ls -l'/alias ll='ls -lh'/g" $ADMIN_HOME/.bash
 sudo -u admin sed -i "s/#alias la='ls -A'/alias la='ls -A'/g" $ADMIN_HOME/.bashrc
 sudo -u admin sed -i "s/#alias l='ls -CF'/alias l='ls -Alh'/g" $ADMIN_HOME/.bashrc
 
+# Add alias for showing CPU temperature
+echo "
+alias temp='sudo vcgencmd measure_temp'" | sudo -u admin tee -a $ADMIN_HOME/.bashrc
+
 # Enable arrow up/down history search
 sudo -u admin cp /etc/inputrc $ADMIN_HOME/.inputrc
 sudo -u admin sed -i 's/# "\\e\[B": history-search-forward/"\\e[B": history-search-forward/g' $ADMIN_HOME/.inputrc
