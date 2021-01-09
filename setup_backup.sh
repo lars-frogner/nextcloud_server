@@ -6,7 +6,8 @@ SOURCE_BASE_DIR=/mnt/hdd1 # Root directory of data to back up
 USER_NAMES="lars jenny" # Space separated list of users to back up data for
 REMOTE_HOST= # <username>@<hostname>/ (empty for local backup)
 DEST_ROOT_DIR=/mnt/backup1
-DEST_BASE_DIR=$DEST_ROOT_DIR/duplicity_backup # Directory on remote host where backups shall be stored
+DEST_DIR_NAME=duplicity_backup
+DEST_BASE_DIR=$DEST_ROOT_DIR/$DEST_ROOT_DIR # Directory on remote host where backups shall be stored
 
 LOG_ROOT_DIR=/var/log/duplicity
 LOG_FILE=$LOG_ROOT_DIR/duplicity.log
@@ -53,21 +54,27 @@ RESTORING BACKUP:
 Connect the hard drive to a machine.
 
 On Windows:
-Use Duplicati (https://www.duplicati.com).
+1. Activate the Windows Subsystem for Linux (https://www.windowscentral.com/install-windows-subsystem-linux-windows-10) and install Ubuntu from Microsoft Store.
+2. Open the Ubuntu terminal.
+2. Install Duplicity:
+    sudo apt install duplicity
+3. Restore files:
+    sudo mkdir /mnt/c/Users/<your username>/restored_backup_$NAME
+    sudo duplicity --no-encryption file:///mnt/<hard drive letter, e.g. d>/$DEST_DIR_NAME/$NAME /mnt/c/Users/<your username>/restored_backup_$NAME
 
 On Linux:
 1. Install Duplicity:
     sudo apt install duplicity
 2. Mount the hard drive:
     sudo mkdir -p $DEST_ROOT_DIR
-    sudo mount -t ntfs-3g /dev/<device> $DEST_ROOT_DIR
+    sudo mount -t ntfs-3g /dev/<device, e.g. sdb1> $DEST_ROOT_DIR
 3. Restore files:
-    mkdir ~/restored_backup
-    sudo duplicity --no-encryption file://$DEST_BASE_DIR/$NAME ~/restored_backup
+    mkdir ~/restored_backup_$NAME
+    sudo duplicity --no-encryption file://$DEST_BASE_DIR/$NAME ~/restored_backup_$NAME
 " > ~/.duplicity_tmp/$NAME/README.txt
     rsync -a ~/.duplicity_tmp/$NAME $REMOTE_HOST/$DEST_BASE_DIR/
     rm -r ~/.duplicity_tmp
 
     # Add backup command to crontab file
-    (sudo crontab -l; echo "$BACKUP_TIME sudo duplicity --log-file=$LOG_FILE --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME" ) | sudo crontab -
+    (sudo crontab -l; echo "$BACKUP_TIME sudo duplicity --log-file=$LOG_FILE --verbosity=info --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME" ) | sudo crontab -
 done
