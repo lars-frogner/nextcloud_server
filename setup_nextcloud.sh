@@ -20,6 +20,9 @@ if [ ! -z "$DOMAIN_NAME" ]
     sudo -u www-data php $NEXTCLOUD_DIR/occ config:system:set trusted_domains 3 --value=$DOMAIN_NAME
 fi
 
+# Remove initial files that are added by default
+sudo -u www-data rm -r $NEXTCLOUD_DIR/core/skeleton/*
+
 # Disable unwanted default apps
 sudo -u www-data php $NEXTCLOUD_DIR/occ app:disable survey_client
 sudo -u www-data php $NEXTCLOUD_DIR/occ app:disable dashboard
