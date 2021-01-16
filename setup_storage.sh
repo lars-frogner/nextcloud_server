@@ -13,9 +13,9 @@ sudo apt -y install ntfs-3g
 sudo apt -y install exfat-fuse exfat-utils
 
 # Mount external hard drive
-HDD1=$(sudo blkid | grep 'TYPE="ntfs"' | head -n 1 | sed -n "s/^\(.*\):.*$/\1/p")
+HDD1_UUID=$(sudo blkid | grep 'TYPE="ntfs"' | head -n 1 | sed -n 's/.*\ UUID=\"\([^\"]*\)\".*/\1/p')
 sudo mkdir -p $HDD1_MOUNT_POINT
-echo "$HDD1 $HDD1_MOUNT_POINT ntfs-3g nofail,nobootwait,uid=$(id -u www-data),gid=$(id -g www-data),umask=027 0       2" | sudo tee -a /etc/fstab
+echo "UUID=$HDD1_UUID $HDD1_MOUNT_POINT ntfs-3g nofail,nobootwait,uid=$(id -u www-data),gid=$(id -g www-data),umask=027 0       2" | sudo tee -a /etc/fstab
 sudo mount -a
 
 set +x
