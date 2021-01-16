@@ -46,3 +46,8 @@ while IFS= read -r REPO; do
     done <<< "$BRANCHES"
     cd -
 done <<< "$REPOS"
+
+# Perform any custom repo synching
+if [[ -f "$SCRIPT_DIR/sync_custom_repos.sh" ]]; then
+    source $SCRIPT_DIR/sync_custom_repos.sh
+fi
