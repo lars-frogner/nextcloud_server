@@ -7,12 +7,12 @@ USER_NAMES="lars jenny" # Space separated list of users to back up data for
 REMOTE_HOST= # <username>@<hostname>/ (empty for local backup)
 DEST_ROOT_DIR=/mnt/backup1
 DEST_DIR_NAME=duplicity_backup
-DEST_BASE_DIR=$DEST_ROOT_DIR/$DEST_ROOT_DIR # Directory on remote host where backups shall be stored
+DEST_BASE_DIR=$DEST_ROOT_DIR/$DEST_DIR_NAME # Directory on remote host where backups shall be stored
 
 LOG_ROOT_DIR=/var/log/duplicity
 LOG_FILE=$LOG_ROOT_DIR/duplicity.log
 
-BACKUP_TIME="0 6 * * *" # In crontab format
+BACKUP_TIME="0 2 * * *" # In crontab format
 
 # Install duplicity
 sudo apt -y install duplicity
@@ -53,7 +53,7 @@ for NAME in $USER_NAMES; do
 RESTORING BACKUP:
 Connect the hard drive to a machine.
 
-On Windows:
+On Windows 10:
 1. Activate the Windows Subsystem for Linux (https://www.windowscentral.com/install-windows-subsystem-linux-windows-10) and install Ubuntu from Microsoft Store.
 2. Open the Ubuntu terminal.
 2. Install Duplicity:
@@ -76,5 +76,5 @@ On Linux:
     rm -r ~/.duplicity_tmp
 
     # Add backup command to crontab file
-    (sudo crontab -l; echo "$BACKUP_TIME sudo duplicity --log-file=$LOG_FILE --verbosity=info --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME" ) | sudo crontab -
+    (sudo crontab -l; echo "$BACKUP_TIME sudo duplicity --log-file=$LOG_FILE --verbosity=info --tempdir=$SOURCE_BASE_DIR/.duplicity/tmp --archive-dir=$SOURCE_BASE_DIR/.duplicity/.cache --name=$NAME --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME" ) | sudo crontab -
 done
