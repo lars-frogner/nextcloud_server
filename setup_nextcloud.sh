@@ -73,7 +73,7 @@ sudo -u www-data php $NEXTCLOUD_DIR/occ config:system:set preview_max_x --value 
 sudo -u www-data php $NEXTCLOUD_DIR/occ config:system:set preview_max_y --value 2048
 sudo -u www-data php $NEXTCLOUD_DIR/occ config:system:set jpeg_quality --value 60
 sudo -u www-data php $NEXTCLOUD_DIR/occ config:app:set preview jpeg_quality --value="60"
-(sudo crontab -u www-data -l; echo "*/15 * * * * sudo -u www-data php $NEXTCLOUD_DIR/occ preview:pre-generate -q" ) | sudo crontab -u www-data -
+(sudo crontab -u www-data -l; echo "*/15 * * * * php $NEXTCLOUD_DIR/occ preview:pre-generate -q" ) | sudo crontab -u www-data -
 
 # Update config.php to get prettier URLs
 sudo sed -i "s/'overwrite.cli.url' => 'http:\/\/localhost',/'overwrite.cli.url' => 'https:\/\/$DOMAIN_NAME\/nextcloud',/g" $NEXTCLOUD_DIR/config/config.php

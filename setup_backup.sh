@@ -76,5 +76,5 @@ On Linux:
     rm -r ~/.duplicity_tmp
 
     # Add backup command to crontab file
-    (sudo crontab -l; echo "$BACKUP_TIME sudo duplicity --log-file=$LOG_FILE --verbosity=info --tempdir=$SOURCE_BASE_DIR/.duplicity/tmp --archive-dir=$SOURCE_BASE_DIR/.duplicity/.cache --name=$NAME --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME" ) | sudo crontab -
+    (sudo crontab -l; echo "$BACKUP_TIME duplicity --log-file=$LOG_FILE --verbosity=info --tempdir=$SOURCE_BASE_DIR/.duplicity/tmp --archive-dir=$SOURCE_BASE_DIR/.duplicity/.cache --name=$NAME --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME" ) | sudo crontab -
 done
