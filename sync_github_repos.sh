@@ -4,6 +4,9 @@ set -e
 # Add to crontab to automatically run at midnight:
 # (sudo crontab -l; echo "0 0 * * * <script dir>/sync_github_repos.sh" ) | sudo crontab -
 
+# Also perform regular file scan to make Nextcloud aware of changes
+# (sudo crontab -u www-data -l; echo "0 2 * * * php /var/www/nextcloud/occ files:scan <username> --path=<local repo dir>" ) | sudo crontab -u www-data -
+
 # Directory where repos should be synced to
 LOCAL_REPO_DIR=/mnt/hdd1/lars/files/Kode/github_repos_backup
 
