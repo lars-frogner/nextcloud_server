@@ -2,6 +2,8 @@
 set -e
 set -x
 
+NEXTCLOUD_DIR=/var/www/nextcloud
+
 SOURCE_BASE_DIR=/mnt/hdd1 # Root directory of data to back up
 USER_NAMES="lars jenny" # Space separated list of users to back up data for
 REMOTE_HOST= # <username>@<hostname>/ (empty for local backup)
@@ -76,5 +78,5 @@ On Linux:
     rm -r ~/.duplicity_tmp
 
     # Add backup command to crontab file
-    (sudo crontab -l; echo "$BACKUP_TIME duplicity --log-file=$LOG_FILE --verbosity=info --tempdir=$SOURCE_BASE_DIR/.duplicity/tmp --archive-dir=$SOURCE_BASE_DIR/.duplicity/.cache --name=$NAME --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME" ) | sudo crontab -
+    (sudo crontab -l; echo "$BACKUP_TIME sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --on 2&>1 >> $LOG_FILE && duplicity --log-file=$LOG_FILE --verbosity=info --tempdir=$SOURCE_BASE_DIR/.duplicity/tmp --archive-dir=$SOURCE_BASE_DIR/.duplicity/.cache --name=$NAME --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME 2&>1 > /dev/null && sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --off 2&>1 >> $LOG_FILE" ) | sudo crontab -
 done
