@@ -22,4 +22,14 @@ static ip_address=$HOST_IP/24
 static routers=$ROUTER_IP
 static domain_name_servers=$DNS_IP" | sudo tee -a /etc/dhcpcd.conf
 
+# Disable bluetooth
+echo "
+
+# Disable Bluetooth
+dtoverlay=disable-bt" | sudo tee -a /boot/config.txt
+
+sudo systemctl disable hciuart.service
+sudo systemctl disable bluealsa.service
+sudo systemctl disable bluetooth.service
+
 set +x
