@@ -42,9 +42,13 @@ $SCRIPT_DIR/configure_php.sh
 
 source $SCRIPT_DIR/install_noip_duc.sh # Exports $DOMAIN_NAME
 
-echo "Go to router settings and forward ports 22 (SSH), [80 (HTTP), ] 443 (HTTPS) to IP $HOST_IP"
-read -p "Press ENTER to continue"
-$SCRIPT_DIR/install_certbot.sh
+SETUP_HTTPS_CERTIFICATE=false
+if [[ "$SETUP_HTTPS_CERTIFICATE" = true ]]; then
+    echo "Go to router settings and forward ports 22 (SSH), 80 (HTTP) and 443 (HTTPS) to IP $HOST_IP"
+    read -p "Press ENTER to continue"
+    $SCRIPT_DIR/install_certbot.sh
+    echo "You can now close port 80"
+fi
 
 source $SCRIPT_DIR/setup_storage.sh # Exports $PRIMARY_STORAGE
 
