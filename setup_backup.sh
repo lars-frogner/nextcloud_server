@@ -6,83 +6,124 @@ NEXTCLOUD_DIR=/var/www/nextcloud
 
 SOURCE_BASE_DIR=/mnt/hdd1 # Root directory of data to back up
 USER_NAMES="lars jenny" # Space separated list of users to back up data for
-REMOTE_HOST= # <username>@<hostname>/ (empty for local backup)
+REMOTE_HOST= # <username>@<hostname> (empty for local backup)
 DEST_ROOT_DIR=/mnt/backup1
-DEST_DIR_NAME=duplicati_backup
+DEST_DIR_NAME=duplicacy_backup
 DEST_BASE_DIR=$DEST_ROOT_DIR/$DEST_DIR_NAME # Directory on remote host where backups shall be stored
 
-LOG_ROOT_DIR=/var/log/duplicati
-LOG_FILE=$LOG_ROOT_DIR/duplicati.log
+LOG_ROOT_DIR=/var/log/duplicacy
+LOG_FILE=$LOG_ROOT_DIR/duplicacy.log
 
 BACKUP_TIME="0 2 * * *" # In crontab format
 
-# Install duplicati
-sudo apt -y install apt-transport-https nano git-core software-properties-common dirmngr
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-echo "deb http://download.mono-project.com/repo/debian raspbianbuster main" | sudo tee /etc/apt/sources.list.d/mono-official.list
-sudo apt -y update
-sudo apt -y install mono-devel
-DUPLICATI_VERSION=2.0.5.1-1
-wget https://updates.duplicati.com/beta/duplicati_${DUPLICATI_VERSION}_all.deb
-sudo apt -y install ./duplicati_${DUPLICATI_VERSION}_all.deb
+BACKUP_ADMIN_DIR=~/duplicacy_backup # Local directory where backup metadata shall be stored
+
+# Install duplicacy
+DUPLICACY_VERSION=2.7.2
+wget https://github.com/gilbertchen/duplicacy/releases/download/v${DUPLICACY_VERSION}/duplicacy_linux_arm_${DUPLICACY_VERSION}
+chmod +x duplicacy_linux_arm_${DUPLICACY_VERSION}
+sudo mv duplicacy_linux_arm_${DUPLICACY_VERSION} /usr/bin/
+sudo ln -sf /usr/bin/duplicacy_linux_arm_${DUPLICACY_VERSION} /usr/bin/duplicacy
 
 # Check if backup is remote or local
-if [[ ! -z REMOTE_HOST ]]
+if [[ ! -z $REMOTE_HOST ]]
 then
     # User rsync protocol for remote file transfer
-    PROTOCOL=ssh://
+    PROTOCOL=sftp://
+
+    REMOTE_HOST_SLASH=$REMOTE_HOST/
+    REMOTE_HOST_COLON=$REMOTE_HOST:
 
     SSH_KEYFILE=~/.ssh/backup_id_rsa
 
     # Create SSH key and copy to remote to enable passwordless connection
     ssh-keygen -N '' -f $SSH_KEYFILE
     ssh-copy-id -i $SSH_KEYFILE $REMOTE_HOST
-
-    PROTOCOL_ARGS="--ssh-keyfile=$SSH_KEYFILE"
 else
-    # Set protocol empty if the backup is local
-    PROTOCOL=file://
-
-    PROTOCOL_ARGS=
+    # Set protocol and remote host variables empty if the backup is local
+    PROTOCOL=
+    REMOTE_HOST_SLASH=
+    REMOTE_HOST_COLON=
 fi
 
 # Create directory for backup log
 sudo mkdir -p $LOG_ROOT_DIR
 
 # Configure rotation of backup log
-echo "$LOG_FILE {
+if [[ -z $(grep "$LOG_FILE {" /etc/logrotate.conf) ]]; then
+    echo "
+$LOG_FILE {
     missingok
     weekly
     rotate 10
     compress
     notifempty
 }" | sudo tee -a /etc/logrotate.conf
+fi
+
+echo "#!/bin/bash
+sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --on
+for NAME in $USER_NAMES; do
+    cd $SOURCE_BASE_DIR/\$NAME/files
+    declare DUPLICACY_\${NAME^^}_SSH_KEY_FILE=$SSH_KEYFILE
+    if [[ ! -d \".duplicacy\" ]]; then
+        duplicacy -v -log init -storage-name \$NAME \$NAME ${PROTOCOL}${REMOTE_HOST_SLASH}${DEST_BASE_DIR}/\$NAME
+    fi
+    duplicacy -v -log backup -storage \$NAME -stats
+done
+sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --off" | sudo tee /usr/sbin/backup_nextcloud
+sudo chmod +x /usr/sbin/backup_nextcloud
 
 for NAME in $USER_NAMES; do
-    SOURCE_DIR=$SOURCE_BASE_DIR/$NAME/files
+    mkdir -p ~/.duplicacy_tmp/$DEST_DIR_NAME/$NAME
+    cd ~/.duplicacy_tmp
 
     # Create README and copy to remote backup directory
-    mkdir -p ~/.duplicati_tmp/$NAME
-    echo "Backup performed with Duplicati (https://www.duplicati.com/).
+    echo "Backup performed with Duplicacy (https://duplicacy.com/).
 
 RESTORING BACKUP:
 Connect the hard drive to a machine.
 
-On Windows 10:
-1. Install Duplicity following these instructions: https://duplicati.readthedocs.io/en/latest/02-installation/
+On Windows:
+1. Download the Duplicacy installer for Windows from here: https://duplicacy.com/download.html
+2. Run the downloaded installer.
+3. Enter a new password (will not be used).
+4. Click \"STORAGE\" on the left-hand side. Enter the following for the directory:
+    <drive letter, e.g. D>:/$DEST_DIR_NAME/$NAME
+5. Click \"Continue\".
+6. Enter \"$NAME\" for the storage name, and click \"Add\".
+7. Click \"RESTORE\" on the left-hand side, and select \"$NAME\" for \"Backup IDs\".
+8. Select the revision you want to restore from the \"Revision\" drop-down list.
+9. In the \"Restore to\" field, enter:
+    C:/<directory to restore to, e.g. Users/$NAME/restored_backup_$NAME>
+10. Go to the file explorer and create the directory you want to restore to.
+11. Click on the revision you want to restore in the list above the \"Restore\" button.
+12. Click the \"Restore\" button.
 
 On Linux:
-1. Install Duplicity following these instructions: https://duplicati.readthedocs.io/en/latest/02-installation/
 2. Mount the hard drive:
     sudo mkdir -p $DEST_ROOT_DIR
-    sudo mount -t ntfs-3g /dev/<device, e.g. sdb1> $DEST_ROOT_DIR
-3. Restore files:
+    sudo mount -t ntfs-3g /dev/<device, e.g. sda1> $DEST_ROOT_DIR
+2. Create a new folder for the restored files:
     mkdir ~/restored_backup_$NAME
-    sudo duplicati-cli restore --restore-path=~/restored_backup_$NAME file://$DEST_BASE_DIR/$NAME
-" > ~/.duplicati_tmp/$NAME/README.txt
-    rsync -a ~/.duplicati_tmp/$NAME $REMOTE_HOST/$DEST_BASE_DIR/
-    rm -r ~/.duplicati_tmp
-
-    # Add backup command to crontab file
-    (sudo crontab -l; echo "$BACKUP_TIME sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --on 2&>1 >> $LOG_FILE && duplicati-cli --log-file=$LOG_FILE --log-file-log-level=Verbose backup --no-encryption=true $PROTOCOL_ARGS ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME $SOURCE_DIR 2&>1 > /dev/null && sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --off 2&>1 >> $LOG_FILE" ) | sudo crontab -
+    cd ~/restored_backup_$NAME
+1. Download the Duplicati executable:
+    wget https://github.com/gilbertchen/duplicacy/releases/download/v${DUPLICACY_VERSION}/duplicacy_linux_x64_${DUPLICACY_VERSION}
+    chmod +x duplicacy_linux_x64_${DUPLICACY_VERSION}
+    ln -s duplicacy_linux_x64_${DUPLICACY_VERSION} duplicacy
+3. Print backup history and find the number of the revision you want to restore:
+    sudo duplicacy init $NAME $DEST_BASE_DIR/$NAME
+    sudo duplicacy list
+3. Restore files:
+    sudo duplicacy restore -r <number of the revision to restore>
+" > "$DEST_DIR_NAME/$NAME/README.txt"
+    rsync -a --relative $DEST_DIR_NAME/$NAME ${REMOTE_HOST_COLON}$DEST_ROOT_DIR/
 done
+
+rm -r ~/.duplicacy_tmp
+
+# Add backup command to crontab file
+(sudo crontab -l; echo "$BACKUP_TIME backup_nextcloud 2>&1 >> $LOG_FILE" ) | sudo crontab -
+
+echo "To backup now, run the following command:
+sudo backup_nextcloud 2>&1 | sudo tee -a $LOG_FILE"
