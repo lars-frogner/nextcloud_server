@@ -8,29 +8,42 @@ SOURCE_BASE_DIR=/mnt/hdd1 # Root directory of data to back up
 USER_NAMES="lars jenny" # Space separated list of users to back up data for
 REMOTE_HOST= # <username>@<hostname>/ (empty for local backup)
 DEST_ROOT_DIR=/mnt/backup1
-DEST_DIR_NAME=duplicity_backup
+DEST_DIR_NAME=duplicati_backup
 DEST_BASE_DIR=$DEST_ROOT_DIR/$DEST_DIR_NAME # Directory on remote host where backups shall be stored
 
-LOG_ROOT_DIR=/var/log/duplicity
-LOG_FILE=$LOG_ROOT_DIR/duplicity.log
+LOG_ROOT_DIR=/var/log/duplicati
+LOG_FILE=$LOG_ROOT_DIR/duplicati.log
 
 BACKUP_TIME="0 2 * * *" # In crontab format
 
-# Install duplicity
-sudo apt -y install duplicity
+# Install duplicati
+sudo apt -y install apt-transport-https nano git-core software-properties-common dirmngr
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+echo "deb http://download.mono-project.com/repo/debian raspbianbuster main" | sudo tee /etc/apt/sources.list.d/mono-official.list
+sudo apt -y update
+sudo apt -y install mono-devel
+DUPLICATI_VERSION=2.0.5.1-1
+wget https://updates.duplicati.com/beta/duplicati_${DUPLICATI_VERSION}_all.deb
+sudo apt -y install ./duplicati_${DUPLICATI_VERSION}_all.deb
 
 # Check if backup is remote or local
 if [[ ! -z REMOTE_HOST ]]
 then
     # User rsync protocol for remote file transfer
-    PROTOCOL=rsync://
+    PROTOCOL=ssh://
+
+    SSH_KEYFILE=~/.ssh/backup_id_rsa
 
     # Create SSH key and copy to remote to enable passwordless connection
-    ssh-keygen
-    ssh-copy-id $REMOTE_HOST
+    ssh-keygen -N '' -f $SSH_KEYFILE
+    ssh-copy-id -i $SSH_KEYFILE $REMOTE_HOST
+
+    PROTOCOL_ARGS="--ssh-keyfile=$SSH_KEYFILE"
 else
     # Set protocol empty if the backup is local
-    $PROTOCOL=file://
+    PROTOCOL=file://
+
+    PROTOCOL_ARGS=
 fi
 
 # Create directory for backup log
@@ -49,34 +62,27 @@ for NAME in $USER_NAMES; do
     SOURCE_DIR=$SOURCE_BASE_DIR/$NAME/files
 
     # Create README and copy to remote backup directory
-    mkdir -p ~/.duplicity_tmp/$NAME
-    echo "Backup performed with Duplicity (http://duplicity.nongnu.org/).
+    mkdir -p ~/.duplicati_tmp/$NAME
+    echo "Backup performed with Duplicati (https://www.duplicati.com/).
 
 RESTORING BACKUP:
 Connect the hard drive to a machine.
 
 On Windows 10:
-1. Activate the Windows Subsystem for Linux (https://www.windowscentral.com/install-windows-subsystem-linux-windows-10) and install Ubuntu from Microsoft Store.
-2. Open the Ubuntu terminal.
-2. Install Duplicity:
-    sudo apt install duplicity
-3. Restore files:
-    sudo mkdir /mnt/c/Users/<your username>/restored_backup_$NAME
-    sudo duplicity --no-encryption file:///mnt/<hard drive letter, e.g. d>/$DEST_DIR_NAME/$NAME /mnt/c/Users/<your username>/restored_backup_$NAME
+1. Install Duplicity following these instructions: https://duplicati.readthedocs.io/en/latest/02-installation/
 
 On Linux:
-1. Install Duplicity:
-    sudo apt install duplicity
+1. Install Duplicity following these instructions: https://duplicati.readthedocs.io/en/latest/02-installation/
 2. Mount the hard drive:
     sudo mkdir -p $DEST_ROOT_DIR
     sudo mount -t ntfs-3g /dev/<device, e.g. sdb1> $DEST_ROOT_DIR
 3. Restore files:
     mkdir ~/restored_backup_$NAME
-    sudo duplicity --no-encryption file://$DEST_BASE_DIR/$NAME ~/restored_backup_$NAME
-" > ~/.duplicity_tmp/$NAME/README.txt
-    rsync -a ~/.duplicity_tmp/$NAME $REMOTE_HOST/$DEST_BASE_DIR/
-    rm -r ~/.duplicity_tmp
+    sudo duplicati-cli restore --restore-path=~/restored_backup_$NAME file://$DEST_BASE_DIR/$NAME
+" > ~/.duplicati_tmp/$NAME/README.txt
+    rsync -a ~/.duplicati_tmp/$NAME $REMOTE_HOST/$DEST_BASE_DIR/
+    rm -r ~/.duplicati_tmp
 
     # Add backup command to crontab file
-    (sudo crontab -l; echo "$BACKUP_TIME sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --on 2&>1 >> $LOG_FILE && duplicity --log-file=$LOG_FILE --verbosity=info --tempdir=$SOURCE_BASE_DIR/.duplicity/tmp --archive-dir=$SOURCE_BASE_DIR/.duplicity/.cache --name=$NAME --no-encryption $SOURCE_DIR ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME 2&>1 > /dev/null && sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --off 2&>1 >> $LOG_FILE" ) | sudo crontab -
+    (sudo crontab -l; echo "$BACKUP_TIME sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --on 2&>1 >> $LOG_FILE && duplicati-cli --log-file=$LOG_FILE --log-file-log-level=Verbose backup --no-encryption=true $PROTOCOL_ARGS ${PROTOCOL}${REMOTE_HOST}${DEST_BASE_DIR}/$NAME $SOURCE_DIR 2&>1 > /dev/null && sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --off 2&>1 >> $LOG_FILE" ) | sudo crontab -
 done
