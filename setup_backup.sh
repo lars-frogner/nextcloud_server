@@ -7,8 +7,8 @@ NEXTCLOUD_DIR=/var/www/nextcloud
 SOURCE_BASE_DIR=/mnt/hdd1 # Root directory of data to back up
 USER_NAMES="lars jenny" # Space separated list of users to back up data for
 REMOTE_HOST= # <username>@<hostname> (empty for local backup)
-DEST_ROOT_DIR=/mnt/backup1
-DEST_DIR_NAME=duplicacy_backup
+DEST_ROOT_DIR=/mnt/ulverudskyen_backup
+DEST_DIR_NAME=ulverudskyen_backup
 DEST_BASE_DIR=$DEST_ROOT_DIR/$DEST_DIR_NAME # Directory on remote host where backups shall be stored
 
 LOG_ROOT_DIR=/var/log/duplicacy
@@ -16,12 +16,10 @@ LOG_FILE=$LOG_ROOT_DIR/duplicacy.log
 
 BACKUP_TIME="0 2 * * *" # In crontab format
 
-BACKUP_ADMIN_DIR=~/duplicacy_backup # Local directory where backup metadata shall be stored
-
 # Install duplicacy
 DUPLICACY_VERSION=2.7.2
 wget https://github.com/gilbertchen/duplicacy/releases/download/v${DUPLICACY_VERSION}/duplicacy_linux_arm_${DUPLICACY_VERSION}
-chmod +x duplicacy_linux_arm_${DUPLICACY_VERSION}
+chmod a+x duplicacy_linux_arm_${DUPLICACY_VERSION}
 sudo mv duplicacy_linux_arm_${DUPLICACY_VERSION} /usr/bin/
 sudo ln -sf /usr/bin/duplicacy_linux_arm_${DUPLICACY_VERSION} /usr/bin/duplicacy
 
@@ -48,6 +46,7 @@ fi
 
 # Create directory for backup log
 sudo mkdir -p $LOG_ROOT_DIR
+sudo chown admin $LOG_ROOT_DIR
 
 # Configure rotation of backup log
 if [[ -z $(grep "$LOG_FILE {" /etc/logrotate.conf) ]]; then
@@ -65,14 +64,14 @@ echo "#!/bin/bash
 sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --on
 for NAME in $USER_NAMES; do
     cd $SOURCE_BASE_DIR/\$NAME/files
-    declare DUPLICACY_\${NAME^^}_SSH_KEY_FILE=$SSH_KEYFILE
+    export declare DUPLICACY_\${NAME^^}_SSH_KEY_FILE=$SSH_KEYFILE
     if [[ ! -d \".duplicacy\" ]]; then
         duplicacy -v -log init -storage-name \$NAME \$NAME ${PROTOCOL}${REMOTE_HOST_SLASH}${DEST_BASE_DIR}/\$NAME
     fi
     duplicacy -v -log backup -storage \$NAME -stats
 done
 sudo -u www-data php $NEXTCLOUD_DIR/occ maintenance:mode --off" | sudo tee /usr/sbin/backup_nextcloud
-sudo chmod +x /usr/sbin/backup_nextcloud
+sudo chmod a+x /usr/sbin/backup_nextcloud
 
 for NAME in $USER_NAMES; do
     mkdir -p ~/.duplicacy_tmp/$DEST_DIR_NAME/$NAME
@@ -101,22 +100,22 @@ On Windows:
 12. Click the \"Restore\" button.
 
 On Linux:
-2. Mount the hard drive:
+1. Mount the hard drive:
     sudo mkdir -p $DEST_ROOT_DIR
     sudo mount -t ntfs-3g /dev/<device, e.g. sda1> $DEST_ROOT_DIR
 2. Create a new folder for the restored files:
     mkdir ~/restored_backup_$NAME
     cd ~/restored_backup_$NAME
-1. Download the Duplicati executable:
+3. Download the Duplicati executable:
     wget https://github.com/gilbertchen/duplicacy/releases/download/v${DUPLICACY_VERSION}/duplicacy_linux_x64_${DUPLICACY_VERSION}
     chmod +x duplicacy_linux_x64_${DUPLICACY_VERSION}
     ln -s duplicacy_linux_x64_${DUPLICACY_VERSION} duplicacy
-3. Print backup history and find the number of the revision you want to restore:
+4. Print backup history and find the number of the revision you want to restore:
     sudo duplicacy init $NAME $DEST_BASE_DIR/$NAME
     sudo duplicacy list
-3. Restore files:
+5. Restore files:
     sudo duplicacy restore -r <number of the revision to restore>
-" > "$DEST_DIR_NAME/$NAME/README.txt"
+" > $DEST_DIR_NAME/$NAME/README.txt
     rsync -a --relative $DEST_DIR_NAME/$NAME ${REMOTE_HOST_COLON}$DEST_ROOT_DIR/
 done
 
@@ -126,4 +125,4 @@ rm -r ~/.duplicacy_tmp
 (sudo crontab -l; echo "$BACKUP_TIME backup_nextcloud 2>&1 >> $LOG_FILE" ) | sudo crontab -
 
 echo "To backup now, run the following command:
-sudo backup_nextcloud 2>&1 | sudo tee -a $LOG_FILE"
+sudo backup_nextcloud 2>&1 | tee -a $LOG_FILE"
