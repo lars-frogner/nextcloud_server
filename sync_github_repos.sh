@@ -45,6 +45,8 @@ while IFS= read -r REPO; do
             git checkout -B "$BRANCH_NAME" --track "$BRANCH"
             # Pull remote branch
             ssh-agent bash -c "ssh-add $GITHUB_PUBLIC_KEY; git pull"
+            # Restore modification times after checkout, to avoid triggering unnecessary backups
+            git restore-mtime -q
         fi
     done <<< "$BRANCHES"
     cd -
