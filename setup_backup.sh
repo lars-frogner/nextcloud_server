@@ -122,7 +122,7 @@ done
 rm -r ~/.duplicacy_tmp
 
 # Add backup command to crontab file
-(sudo crontab -l; echo "$BACKUP_TIME backup_nextcloud 2>&1 >> $LOG_FILE" ) | sudo crontab -
+(sudo crontab -l; echo "$BACKUP_TIME /usr/sbin/backup_nextcloud 2>&1 >> $LOG_FILE" ) | sudo crontab -
 
 echo "To backup now, run the following command:
 sudo backup_nextcloud 2>&1 | tee -a $LOG_FILE"
